@@ -33,6 +33,9 @@ MANIFEST
 *.manifest
 *.spec
 
+# Python Testing files
+logic_tester.py
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -100,6 +103,11 @@ celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
+
+# JSON Files
+static_city_data.json
+dynamic_cities_data.json
+cities_test.json
 
 # Environments
 .env

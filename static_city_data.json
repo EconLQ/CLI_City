@@ -1,0 +1,33 @@
+{
+   "geonameid": 4990729,
+   "name": "Detroit",
+   "population": 677116,
+   "latitude": 42.33143,
+   "longitude": -83.04575,
+   "division": {
+      "code": null,
+      "geonameid": 5014227,
+      "name": "Wayne",
+      "type": "ADM2"
+   },
+   "country": {
+      "code": "US",
+      "name": "United States of America",
+      "geonameid": 6252001,
+      "depends_on": null
+   },
+   "currency": {
+      "code": "USD",
+      "name": "United States dollar"
+   },
+   "timezone": {
+      "timezone": "America/Detroit",
+      "gtm_offset": -14400,
+      "gmt_offset": -14400,
+      "is_daylight_saving": true,
+      "code": "EDT"
+   },
+   "wiki_id": "Q12439",
+   "wiki_url": "https://en.wikipedia.org/wiki/Detroit",
+   "status": "success"
+}
