@@ -13,9 +13,26 @@ def read_data(file_name: str):
         return json.load(f)
 
 
-def write_data(file_name: str, data: list):
+def write_data(file_name: str, data: (list, dict)):
     with open(file_name, "w") as f:
         return json.dump(data, f, indent=3, ensure_ascii=False)
+
+
+def request_api_data(_url: str):
+    querystring = {"format": "json", "language": "en"}
+    headers = {
+        "X-RapidAPI-Host": "world-geo-data.p.rapidapi.com",
+        "X-RapidAPI-Key": keys.get("X-RapidAPI-Key")
+    }
+    return requests.request("GET", _url, headers=headers, params=querystring)
+
+
+def line_printer(*args):
+    line_beg = "--------------"
+    line_end = "=============="
+    print(line_beg, f"{args[0]}", "", f"{args[1]}", line_end, sep="\n")\
+        if len(args) != 1 \
+        else print(line_beg, f"{args[0]}", line_end, sep="\n")
 
 
 def get_geoname_id(city: str) -> str:
@@ -23,7 +40,7 @@ def get_geoname_id(city: str) -> str:
     Get name of the city and returns its geoname id.
     geoname id is identifier in the GeoNames geographical database
     """
-    g = geocoder.geonames(f"{city}", key="econlq", maxRows=2)
+    g = geocoder.geonames(f"{city}", key=keys.get("geonames_api_key"), maxRows=2)
     if g.geonames_id is not None:
         return str(g.geonames_id)
 
@@ -37,48 +54,30 @@ def input_parser():
     return parser.parse_args()
 
 
-def data_about_city(city: str) -> str:
+def data_about_one_city(city: str):
     """
     Get user input and requesting city details for this city via World Geo API
     Returns string object with city details get from static_city_data.json
     """
-    url = f"https://world-geo-data.p.rapidapi.com/cities/{get_geoname_id(city)}"
-
-    response = requests.request("GET", url, headers=HEADERS,
-                                params=QUERYSTRING)
-
-    static_city_data.update(response.json())
-    write_data("static_city_data.json", data=response.json())
+    _url = f"https://world-geo-data.p.rapidapi.com/cities/{get_geoname_id(city)}"
+    write_data("static_city_data.json",
+               static_city_data.update(request_api_data(_url).json()) or {})
     if isinstance(get_geoname_id(city), str):
-        return f"--------------\n{static_city_data.get('name')}\n\n{static_city_data.get('country').get('name')}" \
-                            f"\n{static_city_data.get('currency').get('code')}\n{static_city_data.get('population')}\n=============="
+        return line_printer(f"{static_city_data.get('name')}\n"
+                            f"\n{static_city_data.get('country').get('name')}"
+                            f"\n{static_city_data.get('currency').get('code')}"
+                            f"\n{static_city_data.get('population')}")
     else:
-        return f"--------------\n{user_input[0]}\n\nInvalid city name: {user_input[0]}\n=============="
+        return line_printer(f"{user_input[0]}\n"
+                            f"\nInvalid city name: {user_input[0]}")
 
 
-def invalid_city_name_exception(user_input: str):
+def append_cities_to_file(_url: str):
     """
-    Get user input as str and during writing data to the file it checks
-    the status key value
+    Appends received data to the file and returns updated file
     """
-    try:
-        if static_city_data.get("status") == "failed":
-            print(f"--------------\n{user_input[0]}\n\nInvalid city name: "
-                  f"{user_input[0]}\n==============")
-    except AttributeError:
-        print(f"--------------\nSystem Error\n==============")
-
-
-def append_cities_to_file(url: str):
-    """
-    Get URL -> send request to World Geo Data API. After that appends received
-    data to the file and return updated file
-    """
-    response = requests.request("GET", url, headers=HEADERS,
-                                params=QUERYSTRING)
-
-    dynamic_cities_data.append(response.json())
-    return write_data("cities_test.json", dynamic_cities_data)
+    return write_data("dynamic_cities_data.json",
+                      dynamic_cities_data.append(request_api_data(_url).json()))
 
 
 def is_there_more_than_two_cities(name_city: str) -> dict:
@@ -105,11 +104,7 @@ if __name__ == '__main__':
     keys = read_data("keys.json")
     arg = input_parser()
     user_input = arg.c  # c -> name of the city
-    QUERYSTRING = {"format": "json", "language": "en"}
-    HEADERS = {
-        "X-RapidAPI-Host": "world-geo-data.p.rapidapi.com",
-        "X-RapidAPI-Key": keys.get("X-RapidAPI-Key")
-    }
+
     try:
         geonames_ids = [] # list where geoname ids of two cities will be written
         if len(is_there_more_than_two_cities(str(user_input))) == 2:
@@ -122,13 +117,12 @@ if __name__ == '__main__':
                 # more than 1 request/second
                 time.sleep(3)
                 for l in dynamic_cities_data:
-                    print(
-                        f"--------------\n{l.get('name')}\n\n{l.get('country').get('name')}" \
-                        f"\n{l.get('currency').get('code')}\n{l.get('population')}\n==============")
+                    line_printer(f"{l.get('name')}\n\n{l.get('country').get('name')}"
+                        f"\n{l.get('currency').get('code')}\n{l.get('population')}")
         else:
-            print(data_about_city(user_input))
+            print(data_about_one_city(user_input))
     except (AttributeError, KeyboardInterrupt):
-        print(f"--------------\nSystem Error\n==============")
+        line_printer("System Error")
     # writing empty list, so when run the file next time
     # we will have only two dictionaries in a list, where we can get the requested data
     write_data("dynamic_cities_data.json", [])
